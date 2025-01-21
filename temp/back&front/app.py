@@ -1,108 +1,103 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import psycopg2
-from psycopg2.extras import DictCursor
-from datetime import datetime
 
-# Flask application setup
 app = Flask(__name__)
-app.secret_key = "111"  # For flash messages
+app.secret_key = '111'  # Для повідомлень Flash
 
-# PostgreSQL connection configuration
+# Конфігурація бази даних
 DB_CONFIG = {
-    "dbname": "intelligencemanagementdb",
-    "user": "postgres",
-    "password": "admin",
-    "host": "localhost",
-    "port": 5432
+    'dbname': 'intelligencemanagementdb',
+    'user': 'postgres',
+    'password': 'admin',
+    'host': 'localhost',
+    'port': 5432
 }
 
-# Helper function to get a database connection
+# Функція для підключення до бази даних
 def get_db_connection():
-    conn = psycopg2.connect(**DB_CONFIG)
-    return conn
+    return psycopg2.connect(**DB_CONFIG)
 
-# Route: View all reports
+# Головна сторінка (Read)
 @app.route('/')
 def index():
     conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=DictCursor)
-    cur.execute("SELECT * FROM intelligencereports ORDER BY reportid;")
-    reports = cur.fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT reportid, reporttype, source, datecollected, analysissummary FROM intelligencereports order by reportid")
+    records = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template('index.html', reports=reports)
+    return render_template('index.html', records=records)
 
-# Route: Add a new report
-@app.route('/add', methods=['GET', 'POST'])
-def add_report():
+# Сторінка для створення запису (Create)
+@app.route('/create', methods=['GET', 'POST'])
+def create():
     if request.method == 'POST':
-        report_type = request.form['report_type']
+        reporttype = request.form['reporttype']
         source = request.form['source']
-        date_collected = request.form['date_collected']
-        analysis_summary = request.form['analysis_summary']
-        priority_level = request.form['priority_level']
+        datecollected = request.form['datecollected']
+        analysissummary = request.form['analysissummary']
+
+        if not all([reporttype, source, datecollected, analysissummary]):
+            flash('All fields are required!', 'error')
+            return redirect(url_for('create'))
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO intelligencereports (reporttype, source, datecollected, analysissummary, prioritylevel)
-            VALUES (%s, %s, %s, %s, %s);
-        """, (report_type, source, date_collected, analysis_summary, priority_level))
+        cur.execute(
+            "INSERT INTO intelligencereports (reporttype, source, datecollected, analysissummary) VALUES (%s, %s, %s, %s)",
+            (reporttype, source, datecollected, analysissummary)
+        )
         conn.commit()
         cur.close()
         conn.close()
-
-        flash("Report added successfully!", "success")
+        flash('Record created successfully!', 'success')
         return redirect(url_for('index'))
 
-    return render_template('add_report.html')
+    return render_template('create.html')
 
-# Route: Edit an existing report
-@app.route('/edit/<int:report_id>', methods=['GET', 'POST'])
-def edit_report(report_id):
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=DictCursor)
-
-    # Fetch the report to edit
-    cur.execute("SELECT * FROM intelligencereports WHERE reportid = %s;", (report_id,))
-    report = cur.fetchone()
-
-    if request.method == 'POST':
-        report_type = request.form['report_type']
-        source = request.form['source']
-        date_collected = request.form['date_collected']
-        analysis_summary = request.form['analysis_summary']
-        priority_level = request.form['priority_level']
-
-        cur.execute("""
-            UPDATE IntelligenceReports
-            SET ReportType = %s, Source = %s, DateCollected = %s, AnalysisSummary = %s, PriorityLevel = %s
-            WHERE ReportID = %s;
-        """, (report_type, source, date_collected, analysis_summary, priority_level, report_id))
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        flash("Report updated successfully!", "success")
-        return redirect(url_for('index'))
-
-    cur.close()
-    conn.close()
-    return render_template('edit_report.html', report=report)
-
-# Route: Delete a report
-@app.route('/delete/<int:report_id>')
-def delete_report(report_id):
+# Сторінка для редагування запису (Update)
+@app.route('/edit/<int:reportid>', methods=['GET', 'POST'])
+def edit(reportid):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM IntelligenceReports WHERE ReportID = %s;", (report_id,))
+
+    if request.method == 'POST':
+        reporttype = request.form['reporttype']
+        source = request.form['source']
+        datecollected = request.form['datecollected']
+        analysissummary = request.form['analysissummary']
+
+        if not all([reporttype, source, datecollected, analysissummary]):
+            flash('All fields are required!', 'error')
+            return redirect(url_for('edit', reportid=reportid))
+
+        cur.execute(
+            "UPDATE intelligencereports SET reporttype = %s, source = %s, datecollected = %s, analysissummary = %s WHERE reportid = %s",
+            (reporttype, source, datecollected, analysissummary, reportid)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        flash('Record updated successfully!', 'success')
+        return redirect(url_for('index'))
+
+    cur.execute("SELECT reportid, reporttype, source, datecollected, analysissummary FROM intelligencereports WHERE reportid = %s", (reportid,))
+    record = cur.fetchone()
+    cur.close()
+    conn.close()
+    return render_template('edit.html', record=record)
+
+# Видалення запису (Delete)
+@app.route('/delete/<int:reportid>', methods=['POST'])
+def delete(reportid):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM intelligencereports WHERE reportid = %s", (reportid,))
     conn.commit()
     cur.close()
     conn.close()
-
-    flash("Report deleted successfully!", "success")
+    flash('Record deleted successfully!', 'success')
     return redirect(url_for('index'))
 
-# Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)

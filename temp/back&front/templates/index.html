@@ -1,27 +1,50 @@
-{% extends "base.html" %}
-{% block content %}
-<h2>All Reports</h2>
-<table>
-    <tr>
-        <th>Report ID</th>
-        <th>Type</th>
-        <th>Source</th>
-        <th>Date Collected</th>
-        <th>Priority</th>
-        <th>Actions</th>
-    </tr>
-    {% for report in reports %}
-    <tr>
-        <td>{{ report.ReportID }}</td>
-        <td>{{ report.ReportType }}</td>
-        <td>{{ report.Source }}</td>
-        <td>{{ report.DateCollected }}</td>
-        <td>{{ report.PriorityLevel }}</td>
-        <td>
-            <a href="{{ url_for('edit_report', report_id=report.ReportID) }}">Edit</a>
-            <a href="{{ url_for('delete_report', report_id=report.ReportID) }}" onclick="return confirm('Are you sure?')">Delete</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligence Reports</title>
+</head>
+<body>
+    <h1>Intelligence Reports</h1>
+    <a href="{{ url_for('create') }}">Create New Record</a>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Report Type</th>
+                <th>Source</th>
+                <th>Date Collected</th>
+                <th>Analysis Summary</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record[0] }}</td>
+                <td>{{ record[1] }}</td>
+                <td>{{ record[2] }}</td>
+                <td>{{ record[3] }}</td>
+                <td>{{ record[4] }}</td>
+                <td>
+                    <a href="{{ url_for('edit', reportid=record[0]) }}">Edit</a>
+                    <form action="{{ url_for('delete', reportid=record[0]) }}" method="POST" style="display:inline;">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <ul>
+        {% for category, message in messages %}
+        <li style="color: {{ 'red' if category == 'error' else 'green' }};">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+</body>
+</html>
