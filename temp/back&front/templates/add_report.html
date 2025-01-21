@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Add New Report</h2>
+<form method="POST">
+    <label>Type:</label><input type="text" name="report_type" required><br>
+    <label>Source:</label><input type="text" name="source" required><br>
+    <label>Date Collected:</label><input type="date" name="date_collected" required><br>
+    <label>Analysis Summary:</label><textarea name="analysis_summary" required></textarea><br>
+    <label>Priority:</label>
+    <select name="priority_level" required>
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+        <option value="Critical">Critical</option>
+    </select><br>
+    <button type="submit">Add Report</button>
+</form>
+{% endblock %}
