@@ -1,1 +1,6 @@
 reportid, reporttype, source, datecollected, analysissummary
+
+
+create table mytable(
+    id serial primary key,
+)
