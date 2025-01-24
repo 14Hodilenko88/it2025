@@ -6,7 +6,7 @@ app.secret_key = '111'  # Для повідомлень Flash
 
 # Конфігурація бази даних
 DB_CONFIG = {
-    'dbname': 'intelligencemanagementdb',
+    'dbname': 'it2025practice13',
     'user': 'postgres',
     'password': 'admin',
     'host': 'localhost',
